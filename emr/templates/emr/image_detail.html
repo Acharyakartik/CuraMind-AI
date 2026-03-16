@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Image | CuraMind AI{% endblock %}
+{% block content %}
+  <div class="grid">
+    <div class="card col-12">
+      <div class="muted">Medical Image</div>
+      <h2 style="margin:6px 0 0 0">{{ img.id }}</h2>
+      <div class="muted" style="margin-top:8px">Record: <a href="{% url 'emr:record_detail' img.record.id %}">{{ img.record.id }}</a></div>
+      <div style="margin-top:10px">
+        <a class="btn" href="{% url 'emr:download_original_dicom' img.id %}">Download Original DICOM</a>
+      </div>
+      {% if img.processing_error %}
+        <div style="margin-top:10px; color: var(--danger)">Processing error: {{ img.processing_error }}</div>
+      {% endif %}
+    </div>
+
+    <div class="card col-6">
+      <h3 style="margin:0 0 10px 0">Preview</h3>
+      {% if img.preview_png %}
+        <img alt="DICOM preview" src="{% url 'emr:view_preview_png' img.id %}" style="width:100%; border-radius: 12px; border:1px solid rgba(255,255,255,0.08)" />
+      {% else %}
+        <div class="muted">No preview generated yet (run Celery processing).</div>
+      {% endif %}
+    </div>
+
+    <div class="card col-6">
+      <h3 style="margin:0 0 10px 0">DICOM Metadata</h3>
+      {% if img.dicom %}
+        <table>
+          <tbody>
+            <tr><th>Modality</th><td>{{ img.dicom.modality }}</td></tr>
+            <tr><th>Study UID</th><td style="word-break:break-all">{{ img.dicom.study_instance_uid }}</td></tr>
+            <tr><th>Series UID</th><td style="word-break:break-all">{{ img.dicom.series_instance_uid }}</td></tr>
+            <tr><th>SOP UID</th><td style="word-break:break-all">{{ img.dicom.sop_instance_uid }}</td></tr>
+            <tr><th>Rows</th><td>{{ img.dicom.rows }}</td></tr>
+            <tr><th>Columns</th><td>{{ img.dicom.columns }}</td></tr>
+            <tr><th>Bits</th><td>{{ img.dicom.bits_allocated }}</td></tr>
+            <tr><th>Photo</th><td>{{ img.dicom.photometric_interpretation }}</td></tr>
+          </tbody>
+        </table>
+      {% else %}
+        <div class="muted">Metadata not extracted yet.</div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

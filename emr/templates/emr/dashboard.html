@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | CuraMind AI{% endblock %}
+{% block content %}
+  <div class="card">
+    <h2 style="margin:0 0 8px 0">Your Records</h2>
+    <div class="muted" style="margin-bottom:12px">Records are filtered by object-level permissions (RBAC).</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Record</th>
+          <th>Patient</th>
+          <th>Primary Doctor</th>
+          <th>Updated</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+          <tr>
+            <td><a href="{% url 'emr:record_detail' r.id %}">{{ r.id }}</a></td>
+            <td>{{ r.patient.username }}</td>
+            <td>{% if r.primary_doctor %}{{ r.primary_doctor.username }}{% else %}<span class="muted">Unassigned</span>{% endif %}</td>
+            <td>{{ r.updated_at }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4" class="muted">No accessible records yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}
+

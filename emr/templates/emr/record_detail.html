@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Record | CuraMind AI{% endblock %}
+{% block content %}
+  <div class="grid">
+    <div class="card col-12">
+      <div class="muted">Medical Record</div>
+      <h2 style="margin:6px 0 0 0">{{ record.id }}</h2>
+      <div class="muted" style="margin-top:8px">Patient: {{ record.patient.username }}</div>
+      <div class="muted">Primary doctor: {% if record.primary_doctor %}{{ record.primary_doctor.username }}{% else %}Unassigned{% endif %}</div>
+      {% if record.summary %}
+        <div style="margin-top:12px; white-space:pre-wrap">{{ record.summary }}</div>
+      {% else %}
+        <div class="muted" style="margin-top:12px">No summary yet.</div>
+      {% endif %}
+    </div>
+
+    <div class="card col-12">
+      <h3 style="margin:0 0 10px 0">Images</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Image</th>
+            <th>Status</th>
+            <th>Processed</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for img in record.images.all %}
+            <tr>
+              <td><a href="{% url 'emr:image_detail' img.id %}">{{ img.id }}</a></td>
+              <td><span class="tag">{{ img.status }}</span></td>
+              <td>{% if img.processed_at %}{{ img.processed_at }}{% else %}<span class="muted">Pending</span>{% endif %}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="3" class="muted">No images attached.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}
+
