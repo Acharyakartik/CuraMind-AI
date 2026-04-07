@@ -4,9 +4,9 @@
   <div class="grid">
     <div class="card col-12">
       <div class="muted">Medical Record</div>
-      <h2 style="margin:6px 0 0 0">{{ record.id }}</h2>
-      <div class="muted" style="margin-top:8px">Patient: {{ record.patient.username }}</div>
-      <div class="muted">Primary doctor: {% if record.primary_doctor %}{{ record.primary_doctor.username }}{% else %}Unassigned{% endif %}</div>
+      <h2 style="margin:6px 0 0 0">{{ record.public_id }} <span class="muted" title="{{ record.id }}">({{ record.id|slice:":8" }})</span></h2>
+      <div class="muted" style="margin-top:8px">Patient: {{ record.patient.username }} ({{ record.patient.public_id }})</div>
+      <div class="muted">Primary doctor: {% if record.primary_doctor %}{{ record.primary_doctor.username }} ({{ record.primary_doctor.public_id }}){% else %}Unassigned{% endif %}</div>
       {% if record.summary %}
         <div style="margin-top:12px; white-space:pre-wrap">{{ record.summary }}</div>
       {% else %}
@@ -19,7 +19,8 @@
       <table>
         <thead>
           <tr>
-            <th>Image</th>
+            <th>#</th>
+            <th>Image ID</th>
             <th>Status</th>
             <th>Processed</th>
           </tr>
@@ -27,16 +28,16 @@
         <tbody>
           {% for img in record.images.all %}
             <tr>
-              <td><a href="{% url 'emr:image_detail' img.id %}">{{ img.id }}</a></td>
+              <td>{{ forloop.counter }}</td>
+              <td><a href="{% url 'emr:image_detail' img.id %}">{{ img.public_id }}</a> <span class="muted" title="{{ img.id }}">({{ img.id|slice:":8" }})</span></td>
               <td><span class="tag">{{ img.status }}</span></td>
-              <td>{% if img.processed_at %}{{ img.processed_at }}{% else %}<span class="muted">Pending</span>{% endif %}</td>
+              <td>{% if img.processed_at %}{{ img.processed_at|date:"Y-m-d H:i" }}{% else %}<span class="muted">Pending</span>{% endif %}</td>
             </tr>
           {% empty %}
-            <tr><td colspan="3" class="muted">No images attached.</td></tr>
+            <tr><td colspan="4" class="muted">No images attached.</td></tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
   </div>
 {% endblock %}
-

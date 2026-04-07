@@ -4,8 +4,8 @@
   <div class="grid">
     <div class="card col-12">
       <div class="muted">Medical Image</div>
-      <h2 style="margin:6px 0 0 0">{{ img.id }}</h2>
-      <div class="muted" style="margin-top:8px">Record: <a href="{% url 'emr:record_detail' img.record.id %}">{{ img.record.id }}</a></div>
+      <h2 style="margin:6px 0 0 0">{{ img.public_id }} <span class="muted" title="{{ img.id }}">({{ img.id|slice:":8" }})</span></h2>
+      <div class="muted" style="margin-top:8px">Record: <a href="{% url 'emr:record_detail' img.record.id %}">{{ img.record.public_id }}</a> <span class="muted" title="{{ img.record.id }}">({{ img.record.id|slice:":8" }})</span></div>
       <div style="margin-top:10px">
         <a class="btn" href="{% url 'emr:download_original_dicom' img.id %}">Download Original DICOM</a>
       </div>

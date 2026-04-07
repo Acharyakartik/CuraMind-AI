@@ -1,31 +1,153 @@
 {% extends "base.html" %}
 {% block title %}Dashboard | CuraMind AI{% endblock %}
 {% block content %}
-  <div class="card">
-    <h2 style="margin:0 0 8px 0">Your Records</h2>
-    <div class="muted" style="margin-bottom:12px">Records are filtered by object-level permissions (RBAC).</div>
-    <table>
-      <thead>
-        <tr>
-          <th>Record</th>
-          <th>Patient</th>
-          <th>Primary Doctor</th>
-          <th>Updated</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in records %}
-          <tr>
-            <td><a href="{% url 'emr:record_detail' r.id %}">{{ r.id }}</a></td>
-            <td>{{ r.patient.username }}</td>
-            <td>{% if r.primary_doctor %}{{ r.primary_doctor.username }}{% else %}<span class="muted">Unassigned</span>{% endif %}</td>
-            <td>{{ r.updated_at }}</td>
-          </tr>
-        {% empty %}
-          <tr><td colspan="4" class="muted">No accessible records yet.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <style>
+    .dash { display:flex; gap:14px; align-items:flex-start; }
+    .dash-side { width: 250px; position: sticky; top: 24px; }
+    .dash-main { flex: 1; min-width: 0; }
+    .dash-nav a { display:block; padding: 10px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); margin-top: 8px; }
+    .dash-nav a:hover { background: rgba(255,255,255,0.06); }
+    .pill { display:inline-block; padding: 3px 10px; border-radius: 999px; border:1px solid rgba(255,255,255,0.12); color: var(--muted); font-size: 12px; }
+    @media (max-width: 900px) { .dash { flex-direction: column; } .dash-side { width: auto; position: static; } }
+  </style>
+
+  <div class="dash">
+    <aside class="card dash-side">
+      <div class="muted">Dashboard</div>
+      <div style="margin-top:10px; font-weight:700">{{ user.username }}</div>
+      <div style="margin-top:6px">
+        <span class="pill">{{ user.role|title }}</span>
+        <span class="pill">{{ user.public_id }}</span>
+      </div>
+
+      <div class="dash-nav" style="margin-top:14px">
+        {% if user.is_patient %}
+          <a href="{% url 'appointments:schedule' %}">Schedule Appointment</a>
+        {% endif %}
+        <a href="#appointments">Appointments</a>
+        <a href="#records">Records</a>
+      </div>
+    </aside>
+
+    <main class="dash-main">
+      <div class="grid">
+        <div id="appointments" class="card col-12">
+          <h2 style="margin:0 0 8px 0">Appointments</h2>
+          {% if user.is_patient %}
+            <div class="muted" style="margin-bottom:12px">Your upcoming and recent appointments.</div>
+          {% elif user.is_doctor %}
+            <div class="muted" style="margin-bottom:12px">Your schedule (upcoming and recent).</div>
+          {% elif user.is_nurse %}
+            <div class="muted" style="margin-bottom:12px">Upcoming and recent appointments (nurse view).</div>
+          {% else %}
+            <div class="muted" style="margin-bottom:12px">Upcoming and recent appointments.</div>
+          {% endif %}
+
+          <h3 style="margin:0 0 10px 0">Upcoming</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Appointment ID</th>
+                {% if not user.is_patient %}<th>Patient</th>{% endif %}
+                {% if not user.is_doctor %}<th>Doctor</th>{% endif %}
+                <th>Start</th>
+                <th>End</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for a in upcoming_appointments %}
+                <tr>
+                  <td>{{ forloop.counter }}</td>
+                  <td>{{ a.public_id }}</td>
+                  {% if not user.is_patient %}
+                    <td>{{ a.patient.username }} <span class="muted">({{ a.patient.public_id }})</span></td>
+                  {% endif %}
+                  {% if not user.is_doctor %}
+                    <td>{{ a.doctor.username }} <span class="muted">({{ a.doctor.public_id }})</span></td>
+                  {% endif %}
+                  <td>{{ a.scheduled_start|date:"Y-m-d H:i" }}</td>
+                  <td>{{ a.scheduled_end|date:"Y-m-d H:i" }}</td>
+                  <td><span class="tag">{{ a.status }}</span></td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="{% if user.is_patient or user.is_doctor %}6{% else %}7{% endif %}" class="muted">No upcoming appointments.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          <h3 style="margin:14px 0 10px 0">Recent</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Appointment ID</th>
+                {% if not user.is_patient %}<th>Patient</th>{% endif %}
+                {% if not user.is_doctor %}<th>Doctor</th>{% endif %}
+                <th>Start</th>
+                <th>End</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for a in recent_appointments %}
+                <tr>
+                  <td>{{ forloop.counter }}</td>
+                  <td>{{ a.public_id }}</td>
+                  {% if not user.is_patient %}
+                    <td>{{ a.patient.username }} <span class="muted">({{ a.patient.public_id }})</span></td>
+                  {% endif %}
+                  {% if not user.is_doctor %}
+                    <td>{{ a.doctor.username }} <span class="muted">({{ a.doctor.public_id }})</span></td>
+                  {% endif %}
+                  <td>{{ a.scheduled_start|date:"Y-m-d H:i" }}</td>
+                  <td>{{ a.scheduled_end|date:"Y-m-d H:i" }}</td>
+                  <td><span class="tag">{{ a.status }}</span></td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="{% if user.is_patient or user.is_doctor %}6{% else %}7{% endif %}" class="muted">No recent appointments.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div id="records" class="card col-12">
+          <h2 style="margin:0 0 8px 0">{{ records_title }}</h2>
+          <div class="muted" style="margin-bottom:12px">Records are filtered by object-level permissions (RBAC).</div>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Record ID</th>
+                <th>Patient</th>
+                <th>Primary Doctor</th>
+                <th>Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in records %}
+                <tr>
+                  <td>{{ forloop.counter }}</td>
+                  <td>
+                    <a href="{% url 'emr:record_detail' r.id %}">{{ r.public_id }}</a>
+                    <span class="muted" title="{{ r.id }}">({{ r.id|slice:":8" }})</span>
+                  </td>
+                  <td>{{ r.patient.username }} <span class="muted">({{ r.patient.public_id }})</span></td>
+                  <td>{% if r.primary_doctor %}{{ r.primary_doctor.username }} <span class="muted">({{ r.primary_doctor.public_id }})</span>{% else %}<span class="muted">Unassigned</span>{% endif %}</td>
+                  <td>{{ r.updated_at|date:"Y-m-d H:i" }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="5" class="muted">No accessible records yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
   </div>
 {% endblock %}
-

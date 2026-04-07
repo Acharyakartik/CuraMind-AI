@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}Schedule Appointment | CuraMind AI{% endblock %}
+{% block content %}
+  <div class="card" style="margin-bottom:12px">
+    <h2 style="margin:0 0 6px 0">Schedule Appointment</h2>
+    <div class="muted">Fill the details below and submit to create a requested appointment.</div>
+  </div>
+
+  <form class="card" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="card" style="border-color: rgba(255,90,122,0.55); margin-bottom:12px">
+        {% for e in form.non_field_errors %}<div style="color: var(--danger)">{{ e }}</div>{% endfor %}
+      </div>
+    {% endif %}
+
+    <style>
+      .fgrid { display:grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
+      .fcol-12 { grid-column: span 12; }
+      .fcol-6 { grid-column: span 6; }
+      .fcol-4 { grid-column: span 4; }
+      .fcol-3 { grid-column: span 3; }
+      label { display:block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+      input, select, textarea { width: 100%; padding: 10px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.10); background: rgba(255,255,255,0.03); color: var(--text); outline: none; color-scheme: dark; }
+      input[type="checkbox"] { width:auto; }
+      select { cursor: pointer; }
+      select option { background: var(--card); color: var(--text); }
+      input:focus, select:focus, textarea:focus { border-color: rgba(70,211,162,0.55); box-shadow: 0 0 0 3px rgba(70,211,162,0.14); }
+      .help { font-size: 12px; color: var(--muted); margin-top: 6px; }
+      .err { font-size: 12px; color: var(--danger); margin-top: 6px; }
+      @media (max-width: 860px) { .fcol-6, .fcol-4, .fcol-3 { grid-column: span 12; } }
+    </style>
+
+    <div class="grid">
+      <div class="col-12">
+        <h3 style="margin:0 0 10px 0">1. Patient Details</h3>
+        <div class="fgrid">
+          <div class="fcol-6">
+            <label for="{{ form.full_name.id_for_label }}">Full Name *</label>
+            {{ form.full_name }}
+            {% for e in form.full_name.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="fcol-6">
+            <label for="{{ form.gender.id_for_label }}">Gender</label>
+            {{ form.gender }}
+            {% for e in form.gender.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+
+          <div class="fcol-6">
+            <label for="{{ form.date_of_birth.id_for_label }}">Date of Birth</label>
+            {{ form.date_of_birth }}
+            {% for e in form.date_of_birth.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="fcol-6">
+            <label for="{{ form.age.id_for_label }}">Age</label>
+            {{ form.age }}
+            {% for e in form.age.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+
+          <div class="fcol-6">
+            <label for="{{ form.mobile_number.id_for_label }}">Mobile Number *</label>
+            {{ form.mobile_number }}
+            {% for e in form.mobile_number.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="fcol-6">
+            <label for="{{ form.email.id_for_label }}">Email Address *</label>
+            {{ form.email }}
+            {% for e in form.email.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12" style="margin-top:12px">
+        <h3 style="margin:0 0 10px 0">2. Appointment Information</h3>
+        <div class="fgrid">
+          <div class="fcol-6">
+            <label for="{{ form.department.id_for_label }}">Department / Specialty</label>
+            {{ form.department }}
+            {% for e in form.department.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="fcol-6">
+            <label for="{{ form.doctor.id_for_label }}">Doctor Name *</label>
+            {{ form.doctor }}
+            {% for e in form.doctor.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+
+          <div class="fcol-4">
+            <label for="{{ form.preferred_date.id_for_label }}">Preferred Appointment Date *</label>
+            {{ form.preferred_date }}
+            {% for e in form.preferred_date.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="fcol-4">
+            <label for="{{ form.preferred_time_slot.id_for_label }}">Preferred Time Slot *</label>
+            {{ form.preferred_time_slot }}
+            {% for e in form.preferred_time_slot.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="fcol-4">
+            <label for="{{ form.visit_type.id_for_label }}">Type of Visit</label>
+            {{ form.visit_type }}
+            {% for e in form.visit_type.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12" style="margin-top:12px">
+        <h3 style="margin:0 0 10px 0">3. Location / Patient Info</h3>
+        <div class="fgrid">
+          <div class="fcol-6">
+            <label for="{{ form.city.id_for_label }}">City</label>
+            {{ form.city }}
+            {% for e in form.city.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="fcol-6">
+            <label for="{{ form.address.id_for_label }}">Address (optional)</label>
+            {{ form.address }}
+            {% for e in form.address.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12" style="margin-top:12px">
+        <h3 style="margin:0 0 10px 0">4. Medical Information</h3>
+        <div class="fgrid">
+          <div class="fcol-12">
+            <label for="{{ form.symptoms.id_for_label }}">Symptoms / Reason for Visit *</label>
+            {{ form.symptoms }}
+            {% for e in form.symptoms.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="fcol-12">
+            <label for="{{ form.existing_conditions.id_for_label }}">Existing Conditions (optional)</label>
+            {{ form.existing_conditions }}
+            {% for e in form.existing_conditions.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="fcol-12">
+            <label for="{{ form.additional_notes.id_for_label }}">Additional Notes</label>
+            {{ form.additional_notes }}
+            {% for e in form.additional_notes.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12" style="margin-top:12px">
+        <h3 style="margin:0 0 10px 0">5. Extra (Optional Fields)</h3>
+        <div class="fgrid">
+          <div class="fcol-6">
+            <label for="{{ form.emergency_contact.id_for_label }}">Emergency Contact</label>
+            {{ form.emergency_contact }}
+            {% for e in form.emergency_contact.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="fcol-6">
+            <label for="{{ form.invite_guest_email.id_for_label }}">Invite Guest / Attendee</label>
+            {{ form.invite_guest_email }}
+            {% for e in form.invite_guest_email.errors %}<div class="err">{{ e }}</div>{% endfor %}
+            <div class="help">Optional: email address of a guest/attendee.</div>
+          </div>
+          <div class="fcol-12">
+            <label for="{{ form.report_upload.id_for_label }}">Upload Reports</label>
+            {{ form.report_upload }}
+            {% for e in form.report_upload.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12" style="margin-top:12px">
+        <h3 style="margin:0 0 10px 0">6. Final Submission</h3>
+        <div class="fgrid">
+          <div class="fcol-12">
+            <label for="{{ form.consent.id_for_label }}" style="display:flex; gap:10px; align-items:center; margin:0">
+              {{ form.consent }}
+              <span>I confirm the information above is correct (Consent / Declaration) *</span>
+            </label>
+            {% for e in form.consent.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+        </div>
+
+        <div style="margin-top:14px; display:flex; gap:10px; align-items:center">
+          <button class="btn" type="submit">Schedule Appointment</button>
+          <a class="btn danger" href="{% url 'emr:dashboard' %}">Cancel</a>
+        </div>
+      </div>
+    </div>
+  </form>
+{% endblock %}

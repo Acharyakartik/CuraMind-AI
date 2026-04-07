@@ -115,7 +115,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Kolkata"
 USE_I18N = True
 USE_TZ = True
 
@@ -148,6 +148,9 @@ CSRF_COOKIE_HTTPONLY = True
 SECURE_REFERRER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
 
+# Some environments cannot create SQLite journal files; use in-memory journaling to avoid disk I/O errors.
+import curamind_ai.sqlite_pragmas  # noqa: F401,E402
+
 # CSP: restrict to self by default (adjust when adding CDNs)
 CSP_DEFAULT_SRC = ("'self'",)
 CSP_IMG_SRC = ("'self'", "data:")
@@ -158,3 +161,28 @@ CELERY_BROKER_URL = env("CELERY_BROKER_URL")
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND")
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 60 * 10
+
+# Celery Beat (periodic tasks)
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True
+
+try:
+    from celery.schedules import crontab  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
+    crontab = None  # type: ignore
+
+# Periodic automation (requires Celery + Celery Beat running; times follow TIME_ZONE):
+# - Every 5 minutes: auto-confirm/cancel appointment requests based on slot conflicts + current time
+# - Every night at 00:10: generate yesterday's appointment report CSVs under `var/reports/appointments/`
+CELERY_BEAT_SCHEDULE = {
+    "appointments-sync-statuses-every-5-min": {
+        "task": "appointments.tasks.sync_appointment_statuses_task",
+        "schedule": 60 * 5,
+        "kwargs": {"days_ahead": 1},
+    },
+}
+if crontab is not None:
+    CELERY_BEAT_SCHEDULE["appointments-nightly-report"] = {
+        "task": "appointments.tasks.generate_appointments_nightly_report_task",
+        "schedule": crontab(minute=10, hour=0),
+    }
