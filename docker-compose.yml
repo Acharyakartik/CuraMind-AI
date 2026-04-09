@@ -4,3 +4,53 @@ services:
     ports:
       - "6379:6379"
 
+  web:
+    build: .
+    depends_on:
+      - redis
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      # Dev-friendly defaults (prevents DisallowedHost/CSRF issues when accessing via IP/hostname).
+      ALLOWED_HOSTS: "*"
+      CSRF_TRUSTED_ORIGINS: http://localhost:8000,http://127.0.0.1:8000,http://0.0.0.0:8000
+    volumes:
+      - .:/app
+      - app_var:/app/var
+
+  worker:
+    build: .
+    depends_on:
+      - redis
+      - web
+    env_file:
+      - .env
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+    volumes:
+      - .:/app
+      - app_var:/app/var
+    command: ["sh", "docker/worker.sh"]
+
+  beat:
+    build: .
+    depends_on:
+      - redis
+      - web
+    env_file:
+      - .env
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+    volumes:
+      - .:/app
+      - app_var:/app/var
+    command: ["sh", "docker/beat.sh"]
+
+volumes:
+  app_var:
