@@ -80,6 +80,39 @@ Run these in the background (dev):
 - Terminal 1: `celery -A curamind_ai worker -l info`
 - Terminal 2: `celery -A curamind_ai beat -l info`
 
+## Docker (Dev)
+
+This repo includes a full Docker Compose stack for:
+
+- Django web app (`web`)
+- Redis broker (`redis`)
+- Celery worker (`worker`)
+- Celery Beat scheduler (`beat`)
+
+### 1) Configure env
+
+- Copy env: `copy .env.example .env` and edit values (Windows)
+
+### 2) Build + start
+
+- Start everything: `docker compose up --build`
+- App URL: `http://localhost:8000`
+- Note: `web` applies migrations; `worker`/`beat` wait for them (avoids SQLite migration races).
+
+### 3) Run Django commands inside the container
+
+- Migrations (already runs on startup): `docker compose exec web python manage.py migrate`
+- Create admin: `docker compose exec web python manage.py createsuperuser`
+
+### 4) Stop
+
+- Stop: `docker compose down`
+
+### Troubleshooting (Windows)
+
+- If you see `permission denied ... dockerDesktopLinuxEngine` (or `docker_engine`), Docker Desktop is not fully running.
+  Start **Docker Desktop Service** (`com.docker.service`) from `services.msc`, or restart Docker Desktop (may require Admin).
+
 ### If Docker Desktop / Redis is not available (Windows)
 
 If you see errors like "failed to connect to the docker API ... dockerDesktopLinuxEngine", Docker Desktop is not running.
