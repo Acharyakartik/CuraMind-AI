@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from collections import defaultdict
+from datetime import datetime, time, timedelta
+
 from django.contrib.auth.decorators import login_required
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, render
@@ -48,6 +51,7 @@ def dashboard(request: HttpRequest) -> HttpResponse:
     )
 
     now = timezone.now()
+    tz = timezone.get_current_timezone()
     appts = Appointment.objects.select_related("patient", "doctor")
     if request.user.is_patient:
         appts = appts.filter(patient=request.user)
@@ -60,6 +64,55 @@ def dashboard(request: HttpRequest) -> HttpResponse:
 
     upcoming_appointments = appts.filter(scheduled_end__gte=now).order_by("scheduled_start")[:15]
     recent_appointments = appts.filter(scheduled_end__lt=now).order_by("-scheduled_start")[:10]
+    doctor_timetable: list[dict[str, object]] = []
+    doctor_today_count = 0
+    doctor_week_count = 0
+
+    if request.user.is_doctor:
+        today = timezone.localdate(now)
+        window_days = 7
+        window_end = today + timedelta(days=window_days - 1)
+
+        day_start = timezone.make_aware(datetime.combine(today, time.min), tz)
+        day_end = timezone.make_aware(datetime.combine(window_end + timedelta(days=1), time.min), tz)
+
+        window_appts = list(
+            Appointment.objects.select_related("patient")
+            .filter(doctor=request.user, scheduled_start__gte=day_start, scheduled_start__lt=day_end)
+            .order_by("scheduled_start", "pk")
+        )
+
+        by_day: dict = defaultdict(list)
+        for appt in window_appts:
+            local_start = timezone.localtime(appt.scheduled_start, tz)
+            local_end = timezone.localtime(appt.scheduled_end, tz)
+            local_day = local_start.date()
+            if local_day == today:
+                doctor_today_count += 1
+            by_day[local_day].append(
+                {
+                    "public_id": appt.public_id,
+                    "patient_username": appt.patient.username,
+                    "patient_public_id": appt.patient.public_id,
+                    "status": appt.status,
+                    "start_text": local_start.strftime("%H:%M"),
+                    "end_text": local_end.strftime("%H:%M"),
+                }
+            )
+
+        doctor_week_count = len(window_appts)
+
+        for offset in range(window_days):
+            day = today + timedelta(days=offset)
+            slots = by_day.get(day, [])
+            doctor_timetable.append(
+                {
+                    "date": day,
+                    "weekday": day.strftime("%a"),
+                    "slots": slots,
+                    "count": len(slots),
+                }
+            )
 
     records_title = "Your Records" if request.user.is_patient else "Accessible Records"
 
@@ -71,6 +124,9 @@ def dashboard(request: HttpRequest) -> HttpResponse:
             "records_title": records_title,
             "upcoming_appointments": upcoming_appointments,
             "recent_appointments": recent_appointments,
+            "doctor_timetable": doctor_timetable,
+            "doctor_today_count": doctor_today_count,
+            "doctor_week_count": doctor_week_count,
         },
     )
 

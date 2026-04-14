@@ -1,6 +1,6 @@
 import io
 
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 
 from django.contrib import admin
@@ -91,24 +91,59 @@ class SchedulerHeartbeatAdmin(admin.ModelAdmin):
         if not self._is_scheduler_admin(request.user):
             raise PermissionDenied
 
-        raw = str(request.GET.get("date", "yesterday")).strip().lower()
+        raw = str(request.GET.get("date", "today")).strip().lower()
         if raw in {"today", "now"}:
             report_date = timezone.localdate()
         elif raw in {"yesterday", "prev"}:
             report_date = timezone.localdate() - timedelta(days=1)
+        elif raw in {"tomorrow", "next"}:
+            report_date = timezone.localdate() + timedelta(days=1)
         else:
             try:
                 report_date = date.fromisoformat(raw)
             except ValueError:
-                messages.error(request, "Invalid date. Use YYYY-MM-DD, today, or yesterday.")
+                messages.error(request, "Invalid date. Use YYYY-MM-DD, today, tomorrow, or yesterday.")
                 return redirect(".")
+
+        tz = timezone.get_current_timezone()
+
+        def _range_for(d: date):
+            start = timezone.make_aware(datetime.combine(d, time.min), tz)
+            return start, start + timedelta(days=1)
+
+        day_start, day_end = _range_for(report_date)
 
         appts = (
             Appointment.objects.select_related("doctor", "patient")
-            .filter(scheduled_start__date=report_date)
+            .filter(scheduled_start__gte=day_start, scheduled_start__lt=day_end)
             .order_by("doctor__username", "scheduled_start", "pk")
         )
         appt_count = appts.count()
+
+        # If the user asks for "today" but there are no appointments today, show the next
+        # day that has appointments so the page doesn't look broken to admins.
+        if appt_count == 0 and raw in {"today", "now"}:
+            next_appt = (
+                Appointment.objects.filter(scheduled_start__gte=day_end)
+                .order_by("scheduled_start")
+                .only("scheduled_start")
+                .first()
+            )
+            if next_appt is not None:
+                next_date = timezone.localdate(next_appt.scheduled_start, timezone=tz)
+                if next_date != report_date:
+                    messages.info(
+                        request,
+                        f"No appointments for {report_date.isoformat()}. Showing next date with appointments: {next_date.isoformat()}.",
+                    )
+                    report_date = next_date
+                    day_start, day_end = _range_for(report_date)
+                    appts = (
+                        Appointment.objects.select_related("doctor", "patient")
+                        .filter(scheduled_start__gte=day_start, scheduled_start__lt=day_end)
+                        .order_by("doctor__username", "scheduled_start", "pk")
+                    )
+                    appt_count = appts.count()
         max_rows = 500
         appts_limited = list(appts[:max_rows])
 
