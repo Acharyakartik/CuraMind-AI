@@ -8,7 +8,17 @@
     .dash-nav a { display:block; padding: 10px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); margin-top: 8px; }
     .dash-nav a:hover { background: rgba(255,255,255,0.06); }
     .pill { display:inline-block; padding: 3px 10px; border-radius: 999px; border:1px solid rgba(255,255,255,0.12); color: var(--muted); font-size: 12px; }
+    .timetable-grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .timetable-day { border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px; background: rgba(255,255,255,0.02); }
+    .timetable-head { display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px; }
+    .count-pill { font-size: 12px; color: var(--text); padding: 2px 8px; border-radius: 999px; border: 1px solid rgba(70,211,162,0.35); background: rgba(70,211,162,0.12); }
+    .slot-list { display:grid; gap: 6px; }
+    .slot-row { display:flex; justify-content:space-between; align-items:center; gap: 8px; font-size: 13px; }
+    .slot-time { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--text); }
+    .slot-patient { color: var(--muted); }
+    .summary-badges { display:flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 14px 0; }
     @media (max-width: 900px) { .dash { flex-direction: column; } .dash-side { width: auto; position: static; } }
+    @media (max-width: 860px) { .timetable-grid { grid-template-columns: 1fr; } }
   </style>
 
   <div class="dash">
@@ -24,6 +34,9 @@
         {% if user.is_patient %}
           <a href="{% url 'appointments:schedule' %}">Schedule Appointment</a>
         {% endif %}
+        {% if user.is_doctor %}
+          <a href="#timetable">Timetable</a>
+        {% endif %}
         <a href="#appointments">Appointments</a>
         <a href="#records">Records</a>
       </div>
@@ -31,6 +44,43 @@
 
     <main class="dash-main">
       <div class="grid">
+        {% if user.is_doctor %}
+          <div id="timetable" class="card col-12">
+            <h2 style="margin:0 0 8px 0">Doctor Timetable</h2>
+            <div class="muted">Your schedule for today and the next 6 days.</div>
+            <div class="summary-badges">
+              <span class="tag">Today: {{ doctor_today_count }}</span>
+              <span class="tag">Next 7 Days: {{ doctor_week_count }}</span>
+            </div>
+            <div class="timetable-grid">
+              {% for day in doctor_timetable %}
+                <div class="timetable-day">
+                  <div class="timetable-head">
+                    <div>
+                      <strong>{{ day.weekday }}</strong>
+                      <span class="muted">{{ day.date|date:"Y-m-d" }}</span>
+                    </div>
+                    <span class="count-pill">{{ day.count }} slots</span>
+                  </div>
+                  {% if day.slots %}
+                    <div class="slot-list">
+                      {% for slot in day.slots %}
+                        <div class="slot-row">
+                          <span class="slot-time">{{ slot.start_text }}-{{ slot.end_text }}</span>
+                          <span class="slot-patient">{{ slot.patient_username }} ({{ slot.patient_public_id }})</span>
+                          <span class="tag">{{ slot.status }}</span>
+                        </div>
+                      {% endfor %}
+                    </div>
+                  {% else %}
+                    <div class="muted">No appointments.</div>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+
         <div id="appointments" class="card col-12">
           <h2 style="margin:0 0 8px 0">Appointments</h2>
           {% if user.is_patient %}

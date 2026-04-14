@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import csv
-from datetime import date
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 
 from django.conf import settings
+from django.utils import timezone
 
 from appointments.models import Appointment
 
@@ -24,9 +25,13 @@ def generate_appointments_report_csvs(*, report_date: date) -> dict[str, str]:
     detail_path = out_dir / f"appointments-{report_date.isoformat()}.csv"
     summary_path = out_dir / f"appointments-summary-{report_date.isoformat()}.csv"
 
+    tz = timezone.get_current_timezone()
+    day_start = timezone.make_aware(datetime.combine(report_date, time.min), tz)
+    day_end = day_start + timedelta(days=1)
+
     appts = (
         Appointment.objects.select_related("doctor", "patient")
-        .filter(scheduled_start__date=report_date)
+        .filter(scheduled_start__gte=day_start, scheduled_start__lt=day_end)
         .order_by("doctor__username", "scheduled_start", "pk")
     )
 
@@ -86,4 +91,3 @@ def generate_appointments_report_csvs(*, report_date: date) -> dict[str, str]:
             )
 
     return {"detail": str(detail_path), "summary": str(summary_path)}
-
