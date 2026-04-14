@@ -37,7 +37,7 @@ def log_event(
         ip_address=_ip_from_request(request) if request else None,
         user_agent=(request.META.get("HTTP_USER_AGENT", "")[:300] if request else ""),
         path=(getattr(request, "path", "")[:300] if request else ""),
-        method=(getattr(request, "method", "")[:12] if request else ""),
+        method=((getattr(request, "method", "") or "")[:12] if request else ""),
         status_code=status_code,
         message=message[:300],
         extra=extra or {},
@@ -66,4 +66,3 @@ def log_request_event(*, request, response) -> None:
         object_id="",
         status_code=status_code,
     )
-

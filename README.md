@@ -66,6 +66,24 @@ To auto-confirm requested appointments for **today/tomorrow** and auto-cancel **
 Typical technique is to run this command periodically (every 1–5 minutes) using a scheduler (Linux cron, Windows Task Scheduler),
 or wire it into a Celery Beat periodic task.
 
+### Scheduler health check
+
+This project records scheduler "heartbeats" in the DB when periodic jobs run. To check whether the scheduler appears to be running:
+
+- `python manage.py scheduler_status`
+- Customize thresholds:
+  - `python manage.py scheduler_status --sync-max-age-minutes 10`
+  - `python manage.py scheduler_status --report-max-age-hours 36`
+
+### Seed conflicting appointments (test sync rejection)
+
+To intentionally create multiple appointments for the **same doctor + same date + same time slot** (double-booking) and verify the sync job cancels conflicts:
+
+- Seed: `python manage.py seed_conflicting_appointments --count 5 --days-ahead 1 --slot 09:00-10:00`
+- Run sync: `python manage.py sync_appointment_statuses --days-ahead 1`
+- Expected result: 1 appointment ends up `confirmed` and the rest become `canceled` (slot conflict cleanup).
+- Variant (keep a confirmed one): `python manage.py seed_conflicting_appointments --count 5 --days-ahead 1 --slot 09:00-10:00 --first-confirmed`
+
 ### Always-on scheduler (recommended)
 
 This project includes Celery Beat schedules in `curamind_ai/settings.py` that:
@@ -120,6 +138,10 @@ You can still automate without Docker by using **Windows Task Scheduler** to run
 
 - Every 5 minutes (auto-confirm/auto-cancel): `python manage.py sync_appointment_statuses`
 - Every night (report CSVs): `python manage.py generate_appointments_report --date yesterday`
+
+## Tests
+
+- Run appointment sync tests: `python manage.py test appointments`
 
 ## Notes (Compliance)
 
