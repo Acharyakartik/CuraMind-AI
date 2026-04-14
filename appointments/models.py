@@ -164,22 +164,6 @@ class Appointment(models.Model):
         except Exception:  # noqa: BLE001
             return None
 
-
-class SchedulerHeartbeat(models.Model):
-    """
-    Simple persistence to verify periodic jobs are actually running.
-    Populated by Celery Beat tasks or Windows Task Scheduler jobs.
-    """
-
-    name = models.CharField(max_length=80, unique=True)
-    last_run_at = models.DateTimeField(null=True, blank=True, db_index=True)
-    last_success_at = models.DateTimeField(null=True, blank=True, db_index=True)
-    last_error = models.TextField(blank=True, default="")
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self) -> str:
-        return f"SchedulerHeartbeat({self.name})"
-
     @classmethod
     def preferred_slot_to_range(
         cls,
@@ -270,3 +254,19 @@ class SchedulerHeartbeat(models.Model):
             if available:
                 return day, available[0]
         return None
+
+
+class SchedulerHeartbeat(models.Model):
+    """
+    Simple persistence to verify periodic jobs are actually running.
+    Populated by Celery Beat tasks or Windows Task Scheduler jobs.
+    """
+
+    name = models.CharField(max_length=80, unique=True)
+    last_run_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    last_success_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    last_error = models.TextField(blank=True, default="")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f"SchedulerHeartbeat({self.name})"
